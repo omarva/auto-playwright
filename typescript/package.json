@@ -29,7 +29,7 @@
     "@cucumber/cucumber": "13.3.0",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.65.0",
-    "@types/node": "24.19.2",
+    "@types/node": "26.6.6",
     "allure": "3.33.0",
     "allure-cucumberjs": "3.14.0",
     "allure-js-commons": "3.14.0",
