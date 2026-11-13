@@ -9,6 +9,13 @@ updates:
   - package-ecosystem: npm
     directory: /typescript
     schedule: { interval: weekly }
+    ignore:
+      # @types/node must track the Node LTS used in CI (24), not the latest Node.
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
+      # typescript-eslint does not support TypeScript 7 yet.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
     groups:
       playwright: { patterns: ["@playwright/*", "playwright*", "@axe-core/*"] }
       tooling:
@@ -34,6 +41,10 @@ updates:
   - package-ecosystem: nuget
     directory: /dotnet
     schedule: { interval: weekly }
+    ignore:
+      # Reqnroll.NUnit is only validated against NUnit 3/4.
+      - dependency-name: NUnit
+        update-types: [version-update:semver-major]
     groups:
       dotnet-deps:
         patterns: ["*"]
