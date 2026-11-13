@@ -107,5 +107,5 @@ Each implementation exposes the same verbs (run from its folder):
 | install browsers| `npx playwright install --with-deps` | `playwright install --with-deps` | `./mvnw -B exec:java@install-browsers` | `pwsh AutoPlaywright.Specs/bin/Debug/net10.0/playwright.ps1 install --with-deps` |
 | lint            | `npm run lint`         | `ruff check . && ruff format --check . && mypy src` | `./mvnw -B spotless:check` | `dotnet format --verify-no-changes` |
 | test            | `npm test`             | `pytest`                       | `./mvnw -B verify`           | `dotnet test`                    |
-| demo (headed)   | `npm run demo`         | `pytest -m demo --headed-demo` | `./mvnw -B verify -Pdemo`    | `dotnet test --filter Category=demo` with `HEADLESS=false SLOW_MO=500` |
+| demo (headed)   | `npm run demo`         | `pytest --demo`                | `./mvnw -B verify -Pdemo`    | `./run-tests.sh --demo` / `./run-tests.ps1 -Demo` |
 | open report     | `npm run report`       | `allure serve reports/allure-results` | `./mvnw allure:serve` | `allure serve reports/allure-results` |
