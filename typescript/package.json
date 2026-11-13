@@ -1,0 +1,48 @@
+{
+  "name": "auto-playwright-typescript",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright + Cucumber BDD test framework (TypeScript)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "clean": "rimraf reports",
+    "pretest": "npm run clean",
+    "test": "cucumber-js",
+    "test:smoke": "cross-env TAGS=@smoke npm test",
+    "test:api": "cross-env TAGS=@api npm test",
+    "test:ui": "cross-env TAGS=@ui npm test",
+    "demo": "cross-env TAGS=@demo HEADLESS=false SLOW_MO=400 PARALLEL=1 npm test",
+    "report:html": "tsx scripts/generate-report.mts",
+    "report:allure": "allure generate reports/allure-results --output reports/allure-report",
+    "report": "npm run report:html && npm run report:allure && allure open reports/allure-report",
+    "browsers": "playwright install --with-deps",
+    "lint": "npm run typecheck && eslint . && prettier --check .",
+    "lint:fix": "eslint . --fix && prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "dry-run": "cucumber-js --dry-run --format summary"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@cucumber/cucumber": "13.3.0",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.0",
+    "@types/node": "24.19.2",
+    "allure": "3.33.0",
+    "allure-cucumberjs": "3.14.0",
+    "allure-js-commons": "3.14.0",
+    "cross-env": "10.1.0",
+    "dotenv": "18.0.10",
+    "eslint": "10.14.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.14.0",
+    "multiple-cucumber-html-reporter": "4.6.0",
+    "prettier": "3.10.1",
+    "rimraf": "6.1.4",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2"
+  }
+}
