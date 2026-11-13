@@ -39,3 +39,6 @@ TestResults/
 *.iml
 .DS_Store
 Thumbs.db
+
+# Reqnroll code-behind must never live next to the shared features
+*.feature.cs
