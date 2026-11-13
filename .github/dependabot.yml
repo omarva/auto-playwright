@@ -1,0 +1,44 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      actions: { patterns: ["*"] }
+
+  - package-ecosystem: npm
+    directory: /typescript
+    schedule: { interval: weekly }
+    groups:
+      playwright: { patterns: ["@playwright/*", "playwright*", "@axe-core/*"] }
+      tooling:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: pip
+    directory: /python
+    schedule: { interval: weekly }
+    groups:
+      python-deps:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /java
+    schedule: { interval: weekly }
+    groups:
+      java-deps:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: nuget
+    directory: /dotnet
+    schedule: { interval: weekly }
+    groups:
+      dotnet-deps:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directories: [/typescript, /python, /java, /dotnet]
+    schedule: { interval: weekly }
