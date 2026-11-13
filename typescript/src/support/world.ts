@@ -1,6 +1,7 @@
 import { World, setWorldConstructor, type IWorldOptions } from '@cucumber/cucumber';
-import type { APIRequestContext, APIResponse, Browser, BrowserContext, Page } from '@playwright/test';
+import type { APIRequestContext, Browser, BrowserContext, Page } from '@playwright/test';
 import { request } from '@playwright/test';
+import { ApiSession } from './api-session';
 import { config } from './config';
 import { CartPage } from '../pages/CartPage';
 import { CheckoutPage } from '../pages/CheckoutPage';
@@ -26,8 +27,8 @@ export class CustomWorld extends World {
   browserProvider?: () => Promise<Browser>;
   context?: BrowserContext;
   scenarioName = 'scenario';
-  lastResponse?: APIResponse;
-  lastResponseBody?: unknown;
+  /** API steps state: service, token, variables and last response. */
+  readonly apiSession = new ApiSession(() => this.api());
 
   private _page?: Page;
   private _pages?: Pages;
@@ -79,7 +80,6 @@ export class CustomWorld extends World {
 
   async api(): Promise<APIRequestContext> {
     this._api ??= await request.newContext({
-      baseURL: config.apiBaseUrl,
       timeout: config.navigationTimeout,
       extraHTTPHeaders: { Accept: 'application/json' },
     });
