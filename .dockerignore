@@ -1,0 +1,11 @@
+# Docker build context is the repository root (so images can copy features/)
+.git
+**/node_modules
+**/reports
+**/target
+**/bin
+**/obj
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.env
