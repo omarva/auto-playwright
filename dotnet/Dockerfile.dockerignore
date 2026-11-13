@@ -1,0 +1,6 @@
+# BuildKit picks up <Dockerfile>.dockerignore next to the Dockerfile; paths are relative to the repo-root context.
+**/bin/
+**/obj/
+**/reports/
+**/TestResults/
+**/.env
