@@ -372,7 +372,9 @@ async function main() {
       imported += importAllureResults(run, dir);
       for (const [k, v] of Object.entries(parseProperties(path.join(run.dir, 'allure-results', 'environment.properties')))) {
         if (k === 'Browser') continue;
-        env[k] = env[k] && !env[k].split(', ').includes(v) ? `${env[k]}, ${v}` : v;
+        const known = env[k]?.split(', ').map((x) => x.toLowerCase()) ?? [];
+        if (!env[k]) env[k] = v;
+        else if (!known.includes(v.toLowerCase())) env[k] = `${env[k]}, ${v}`;
       }
     }
     if (imported === 0) continue;
