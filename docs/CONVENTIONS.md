@@ -25,6 +25,9 @@ Because the step text is shared, **step wording is an API** – changing a step 
 | -------------- | -------------------------------------------------------------- |
 | `@ui`          | Needs a browser page (a fresh `BrowserContext` per scenario)   |
 | `@api`         | HTTP only – uses Playwright `APIRequestContext`, no browser    |
+| `@backend`     | Targets the bundled Todo API in `backend/`                     |
+| `@contract`    | JSON-schema contract checks                                    |
+| `@auth` `@todos` | Todo API feature areas                                       |
 | `@smoke`       | Fast, critical-path checks – run on every push                 |
 | `@regression`  | Broader coverage – run nightly and on PRs                      |
 | `@negative`    | Validates error handling                                       |
@@ -50,7 +53,9 @@ own folder). Defaults are chosen so that `run tests` works with zero setup.
 | `TIMEOUT`        | `15000`                                 | action + assertion timeout, ms               |
 | `NAV_TIMEOUT`    | `30000`                                 | navigation timeout, ms                       |
 | `BASE_URL`       | `https://www.saucedemo.com`             | UI system under test                         |
-| `API_BASE_URL`   | `https://jsonplaceholder.typicode.com`  | API system under test                        |
+| `API_BASE_URL`   | `https://jsonplaceholder.typicode.com`  | Public API system under test                 |
+| `BACKEND_URL`    | `http://localhost:3000`                 | Bundled Todo API (`backend/`)                |
+| `BACKEND_REQUIRED` | `false`                               | `true` = fail (not skip) when the Todo API is down |
 | `DEMO_URL`       | `https://playwright.dev`                | Demo feature target                          |
 | `USER_PASSWORD`  | `secret_sauce`                          | Password for named demo-store users          |
 | `TAGS`           | `not @wip`                              | Cucumber tag expression                      |
@@ -109,3 +114,67 @@ Each implementation exposes the same verbs (run from its folder):
 | test            | `npm test`             | `pytest`                       | `./mvnw -B verify`           | `dotnet test`                    |
 | demo (headed)   | `npm run demo`         | `pytest --demo`                | `./mvnw -B verify -Pdemo`    | `./run-tests.sh --demo` / `./run-tests.ps1 -Demo` |
 | open report     | `npm run report`       | `allure serve reports/allure-results` | `./mvnw allure:serve` | `allure serve reports/allure-results` |
+
+## 7. API step library
+
+API steps are generic and keyword-agnostic: register them so they match after
+`Given`, `When` **or** `Then` (pytest-bdd: stack `@given`/`@when`/`@then`;
+Reqnroll: `[StepDefinition]`). They all act on one per-scenario API session.
+
+### Services
+
+| Step | Behaviour |
+| ---- | --------- |
+| `Given I use the "<service>" API` | Switches the base URL. `jsonplaceholder` → `API_BASE_URL` (the default when no service step is used); `todo` → `BACKEND_URL` (default `http://localhost:3000`). For `todo`, first `GET /health`: if unreachable and `BACKEND_REQUIRED` is not `true`, the scenario is **skipped** with the message *"Todo API is not running at <url> - start it with `node backend/server.mjs`"*; if `BACKEND_REQUIRED=true` it **fails**. CI sets `BACKEND_REQUIRED=true`. |
+
+### Authentication (Todo API)
+
+| Step | Behaviour |
+| ---- | --------- |
+| `When I log in to the API as "<user>" with password "<password>"` | `POST /api/auth/login` with `{"username","password"}`; records the response like any request. Does **not** store a token. |
+| `Given I am authenticated as "<user>" with password "<password>"` | Same request, asserts `200`, stores `token`; every later request sends `Authorization: Bearer <token>`. Calling it again switches user. |
+| `Given I am not authenticated` | Clears the token. |
+| `Given I use the bearer token "<token>"` | Sends this exact token from now on. |
+
+### Requests
+
+| Step | Behaviour |
+| ---- | --------- |
+| `When I send a <METHOD> request to "<path>"` | METHOD ∈ GET, POST, PUT, PATCH, DELETE. |
+| `When I send a <METHOD> request to "<path>" with body:` + doc string | JSON body, `Content-Type: application/json`. METHOD ∈ POST, PUT, PATCH. |
+| `When I store the response field "<path>" as "<name>"` | Saves the rendered value of a field into a scenario variable. |
+
+`${name}` placeholders are interpolated from scenario variables in request paths, request bodies **and** expected values.
+An unknown variable is an error. Each request measures its wall-clock duration and
+attaches request + response (method, URL, status, headers, pretty body, duration) to the report.
+
+### Assertions
+
+| Step | Behaviour |
+| ---- | --------- |
+| `Then the response status should be <int>` | |
+| `Then the response header "<name>" should contain "<text>"` | Case-insensitive header name. |
+| `Then the response field "<path>" should be "<value>"` | Compares the **rendered** value (see below). |
+| `Then the response field "<path>" should not be empty` | Field exists, is not null and renders to a non-empty string. |
+| `Then the response field "<path>" should contain "<text>"` | Array → some element renders equal to text; string → substring. |
+| `Then the response should be a list of <int> items` | Body is a JSON array of that length. |
+| `Then every item in the response should have field "<path>" equal to "<value>"` | Body is a non-empty array; every element matches. |
+| `Then the response should contain an item with field "<path>" equal to "<value>"` | Some element matches. |
+| `Then the response should not contain an item with field "<path>" equal to "<value>"` | No element matches. |
+| `Then the response should match the "<name>" schema` | Validates the body against `features/schemas/<name>.schema.json` (JSON Schema draft-07); the failure message lists every violation. |
+| `Then the response time should be below <int> ms` | Duration of the last request. |
+| `Then the response body should be empty` | Zero-length body (e.g. 204). |
+
+**Field paths** are dot-separated; numeric segments index arrays: `address.geo.lat`, `0.email`, `user.username`.
+
+**Rendering rule** (identical everywhere): a JSON string renders as its raw text; every other JSON
+value renders as compact JSON text: `1`, `1.5`, `true`, `false`, `null`. So `"completed" should be "false"`
+works the same in every language. Never use a language's own boolean formatting (`True`, `False`).
+
+### Running the Todo API locally
+
+```bash
+node backend/server.mjs        # Node 22.13+; listens on http://localhost:3000
+```
+
+Seeded users: `alice` / `wonderland`, `bob` / `canwefixit`.
