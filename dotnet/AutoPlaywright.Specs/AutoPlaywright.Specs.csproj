@@ -25,6 +25,7 @@
     <PackageReference Include="AwesomeAssertions" Version="9.6.0" />
     <PackageReference Include="Deque.AxeCore.Playwright" Version="4.14.0" />
     <PackageReference Include="JunitXml.TestLogger" Version="8.1.0" />
+    <PackageReference Include="JsonSchema.Net" Version="9.6.0" />
   </ItemGroup>
 
   <!--
@@ -34,6 +35,8 @@
   <ItemGroup>
     <ReqnrollFeatureFiles Include="$(SharedFeaturesDir)\**\*.feature" Link="Features\%(RecursiveDir)%(Filename)%(Extension)" />
     <None Include="$(SharedFeaturesDir)\**\*.feature" Link="Features\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Shared JSON schemas for contract steps, copied to bin/.../schemas/. -->
+    <None Include="$(SharedFeaturesDir)\schemas\*.json" Link="schemas\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

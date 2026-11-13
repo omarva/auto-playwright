@@ -42,6 +42,12 @@ public sealed class TestSettings
 
     public string DemoUrl => Get("DEMO_URL", "https://playwright.dev").TrimEnd('/');
 
+    /// <summary>Bundled Todo API (backend/), used by <c>@backend</c> scenarios.</summary>
+    public string BackendUrl => Get("BACKEND_URL", "http://localhost:3000").TrimEnd('/');
+
+    /// <summary>When true, an unreachable Todo API fails scenarios instead of skipping them.</summary>
+    public bool BackendRequired => ParseBool(Get("BACKEND_REQUIRED", "false"));
+
     public string UserPassword => Get("USER_PASSWORD", "secret_sauce");
 
     public ArtifactMode Trace => ParseMode(Get("TRACE", "retain-on-failure"));

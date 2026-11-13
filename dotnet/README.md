@@ -77,7 +77,8 @@ All output goes to `dotnet/reports/`, which is wiped before each `dotnet test`:
 | `reports/artifacts/`          | `screenshots/`, `traces/` (open at [trace.playwright.dev](https://trace.playwright.dev)), `videos/` |
 
 Each failed scenario attaches a full-page screenshot and its Playwright trace to Allure and the
-HTML report. API steps attach the request, the response metadata and the pretty-printed body.
+HTML report. API steps attach one exchange per request (method, URL, headers with the token masked,
+body, status, response headers and body, duration).
 Accessibility steps attach the full axe-core violation list.
 
 ## Layout
@@ -94,7 +95,7 @@ dotnet/
     ├── reqnroll.json            # Allure plugin + HTML/Messages formatters
     ├── allureConfig.json
     ├── appsettings.json         # defaults
-    ├── Support/                 # TestSettings, Paths, BrowserPool, ScenarioSession, Hooks, ReportAttachments
+    ├── Support/                 # TestSettings, Paths, BrowserPool, ScenarioSession, ApiSession, Hooks, ReportAttachments
     ├── Pages/                   # Page Objects (Login, Inventory, Cart, Checkout, PlaywrightSite)
     └── Steps/                   # Step definitions, one class per domain
 ```
@@ -103,6 +104,20 @@ dotnet/
 worker, launched only when a `@ui` scenario needs it. Each scenario gets a fresh `BrowserContext`
 (1280×720, test-id attribute `data-test`) and its own `APIRequestContext`. Reqnroll's
 context injection shares the per-scenario `ScenarioSession` between step classes.
+
+## API & back-end steps
+
+`Steps/ApiSteps.cs` implements the shared, keyword-agnostic API step library
+([CONVENTIONS.md §7](../docs/CONVENTIONS.md#7-api-step-library)) with `[StepDefinition]`:
+service switching (`jsonplaceholder` / `todo`), JWT bearer auth, any HTTP method,
+`${var}` interpolation, dot-path fields (`address.geo.lat`, `0.email`), list assertions,
+response-time budgets and JSON-schema contracts validated with
+[JsonSchema.Net](https://github.com/json-everything/json-everything) against the shared
+`features/schemas/*.schema.json` (copied to `bin/.../schemas/`).
+
+`@backend` scenarios need the bundled Todo API (`node backend/server.mjs`, default
+`BACKEND_URL=http://localhost:3000`). If it is not reachable they are **skipped**, or **fail** when
+`BACKEND_REQUIRED=true` (as in CI).
 
 > Reqnroll writes the generated code-behind to `obj/` (`ReqnrollUseIntermediateOutputPathForCodeBehind`),
 > so the shared `features/` folder only ever contains `.feature` files.
