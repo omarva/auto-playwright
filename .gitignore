@@ -1,0 +1,41 @@
+# Reports & artifacts (every language)
+**/reports/
+**/allure-report/
+**/allure-results/
+**/test-results/
+*.trx
+
+# Environment
+.env
+!.env.example
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Java
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# .NET
+bin/
+obj/
+*.user
+TestResults/
+
+# IDE / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.iml
+.DS_Store
+Thumbs.db
