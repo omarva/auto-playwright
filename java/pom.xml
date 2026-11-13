@@ -191,7 +191,7 @@
       <!-- This module only contains tests; don't produce an empty jar. -->
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>3.5.0</version>
+        <version>3.5.1</version>
         <configuration>
           <skipIfEmpty>true</skipIfEmpty>
         </configuration>
@@ -290,7 +290,7 @@
       <!-- reports/html/index.html -> masterthought overview page -->
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>3.4.0</version>
+        <version>3.5.0</version>
         <executions>
           <execution>
             <id>html-report-index</id>
