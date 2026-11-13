@@ -1,0 +1,19 @@
+# Build output
+target/
+
+# Test reports & artifacts (regenerated on every run)
+reports/
+
+# Allure commandline downloaded by allure-maven (./mvnw allure:serve)
+.allure/
+
+# Local configuration
+.env
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
