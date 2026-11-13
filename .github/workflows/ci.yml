@@ -1,0 +1,362 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 3 * * *" # nightly full regression, 03:00 UTC
+  workflow_dispatch:
+    inputs:
+      language:
+        description: Language implementation(s) to run
+        type: choice
+        default: all
+        options: [all, typescript, python, java, dotnet]
+      browser:
+        description: Browser engine(s)
+        type: choice
+        default: all
+        options: [all, chromium, firefox, webkit]
+      tags:
+        description: Cucumber tag expression
+        type: string
+        default: not @wip
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CI: "true"
+  TAGS: ${{ inputs.tags || 'not @wip' }}
+  PARALLEL: "4"
+  RETRIES: "1"
+  HEADLESS: "true"
+  FORCE_COLOR: "1"
+
+jobs:
+  plan:
+    name: Plan matrix
+    runs-on: ubuntu-latest
+    outputs:
+      browsers: ${{ steps.plan.outputs.browsers }}
+      typescript: ${{ steps.plan.outputs.typescript }}
+      python: ${{ steps.plan.outputs.python }}
+      java: ${{ steps.plan.outputs.java }}
+      dotnet: ${{ steps.plan.outputs.dotnet }}
+    steps:
+      - id: plan
+        env:
+          LANGUAGE: ${{ inputs.language || 'all' }}
+          BROWSER: ${{ inputs.browser || 'all' }}
+        run: |
+          if [ "$BROWSER" = "all" ]; then
+            echo 'browsers=["chromium","firefox","webkit"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "browsers=[\"$BROWSER\"]" >> "$GITHUB_OUTPUT"
+          fi
+          for lang in typescript python java dotnet; do
+            if [ "$LANGUAGE" = "all" ] || [ "$LANGUAGE" = "$lang" ]; then run=true; else run=false; fi
+            echo "$lang=$run" >> "$GITHUB_OUTPUT"
+          done
+
+  # ---------------------------------------------------------------- quality gates
+  lint:
+    name: Lint · ${{ matrix.language }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [typescript, python, java, dotnet]
+    steps:
+      - uses: actions/checkout@v7
+
+      - if: matrix.language == 'typescript'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: typescript/package-lock.json
+      - if: matrix.language == 'typescript'
+        name: Type-check, ESLint, Prettier, step coverage
+        working-directory: typescript
+        run: |
+          npm ci --no-audit --no-fund
+          npm run lint
+          npm run dry-run
+
+      - if: matrix.language == 'python'
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: python/requirements*.txt
+      - if: matrix.language == 'python'
+        name: Ruff + mypy (strict)
+        working-directory: python
+        run: |
+          pip install -r requirements-dev.txt
+          ruff check --output-format=github .
+          ruff format --check .
+          mypy
+
+      - if: matrix.language == 'java'
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - if: matrix.language == 'java'
+        name: Spotless (google-java-format) + compile
+        working-directory: java
+        run: ./mvnw -B -ntp spotless:check test-compile
+
+      - if: matrix.language == 'dotnet'
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: dotnet/global.json
+      - if: matrix.language == 'dotnet'
+        name: dotnet format + build (warnings as errors)
+        working-directory: dotnet
+        run: |
+          dotnet format AutoPlaywright.slnx --verify-no-changes --verbosity minimal
+          dotnet build AutoPlaywright.slnx -c Release --nologo
+
+  # ---------------------------------------------------------------- test matrix
+  typescript:
+    name: TypeScript · ${{ matrix.browser }}
+    needs: plan
+    if: needs.plan.outputs.typescript == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ fromJSON(needs.plan.outputs.browsers) }}
+    env:
+      BROWSER: ${{ matrix.browser }}
+    defaults:
+      run:
+        working-directory: typescript
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: typescript/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Install ${{ matrix.browser }}
+        run: npx playwright install --with-deps "$BROWSER"
+      - name: Run scenarios
+        run: npm test
+      - name: Build HTML report
+        if: ${{ !cancelled() }}
+        run: npm run report:html
+      - name: Upload reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: results-typescript-${{ matrix.browser }}
+          path: typescript/reports/
+          retention-days: 14
+          if-no-files-found: warn
+
+  python:
+    name: Python · ${{ matrix.browser }}
+    needs: plan
+    if: needs.plan.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ fromJSON(needs.plan.outputs.browsers) }}
+    env:
+      BROWSER: ${{ matrix.browser }}
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: python/requirements*.txt
+      - run: pip install -r requirements.txt
+      - name: Install ${{ matrix.browser }}
+        run: playwright install --with-deps "$BROWSER"
+      - name: Run scenarios
+        run: python -m pytest
+      - name: Upload reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: results-python-${{ matrix.browser }}
+          path: python/reports/
+          retention-days: 14
+          if-no-files-found: warn
+
+  java:
+    name: Java · ${{ matrix.browser }}
+    needs: plan
+    if: needs.plan.outputs.java == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ fromJSON(needs.plan.outputs.browsers) }}
+    env:
+      BROWSER: ${{ matrix.browser }}
+    defaults:
+      run:
+        working-directory: java
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Install ${{ matrix.browser }}
+        run: ./mvnw -B -ntp exec:java@install-browsers
+      - name: Run scenarios
+        run: ./mvnw -B -ntp verify
+      - name: Upload reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: results-java-${{ matrix.browser }}
+          path: java/reports/
+          retention-days: 14
+          if-no-files-found: warn
+
+  dotnet:
+    name: C# · ${{ matrix.browser }}
+    needs: plan
+    if: needs.plan.outputs.dotnet == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ fromJSON(needs.plan.outputs.browsers) }}
+    env:
+      BROWSER: ${{ matrix.browser }}
+      CONFIGURATION: Release
+      DOTNET_NOLOGO: "true"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+    defaults:
+      run:
+        working-directory: dotnet
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: dotnet/global.json
+      - uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('dotnet/**/*.csproj', 'dotnet/Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - run: dotnet build AutoPlaywright.slnx -c Release
+      - name: Install ${{ matrix.browser }}
+        run: pwsh AutoPlaywright.Specs/bin/Release/net10.0/playwright.ps1 install --with-deps "$BROWSER"
+      - name: Run scenarios
+        run: ./run-tests.sh --no-build
+      - name: Upload reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: results-dotnet-${{ matrix.browser }}
+          path: dotnet/reports/
+          retention-days: 14
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------- reporting
+  report:
+    name: Build report site
+    needs: [typescript, python, java, dotnet]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    env:
+      SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: results-*
+          path: collected
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Install Allure CLI
+        run: npm install --global allure-commandline@2.46.1
+      - name: Build Allure reports + dashboard
+        run: node scripts/build-report-site.mjs collected site
+      - name: Publish test results to the PR / checks
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: collected/*/junit/*.xml
+          check_name: Scenario results
+          comment_mode: ${{ github.event_name == 'pull_request' && 'always' || 'off' }}
+          report_individual_runs: true
+      - name: Upload report site
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report-site
+          path: site/
+          retention-days: 30
+      - name: Prepare GitHub Pages artifact
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/
+
+  deploy:
+    name: Deploy reports to GitHub Pages
+    needs: report
+    if: ${{ !cancelled() && needs.report.result == 'success' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
+
+  # Single required status for branch protection: fails if any test job failed.
+  ci-status:
+    name: CI status
+    needs: [lint, typescript, python, java, dotnet]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate results
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          if echo "$RESULTS" | jq -e 'to_entries | any(.value.result == "failure" or .value.result == "cancelled")' > /dev/null; then
+            echo "::error::One or more jobs failed"
+            exit 1
+          fi
