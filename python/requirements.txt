@@ -8,3 +8,4 @@ pytest-html==4.2.0
 allure-pytest-bdd==2.16.2
 axe-playwright-python==0.1.8
 python-dotenv==1.2.4
+jsonschema==4.26.0

@@ -2,4 +2,4 @@
 
 from pytest_bdd import scenarios
 
-scenarios("ui", "api", "demo")
+scenarios("ui", "api", "backend", "demo")
