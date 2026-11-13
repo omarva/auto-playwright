@@ -36,3 +36,23 @@ Feature: Posts REST API
   Scenario: Request a post that does not exist
     When I send a GET request to "/posts/99999"
     Then the response status should be 404
+
+  @regression
+  Scenario Outline: Update a post with <method>
+    When I send a <method> request to "/posts/1" with body:
+      """json
+      { "title": "Updated title" }
+      """
+    Then the response status should be 200
+    And the response field "title" should be "Updated title"
+    And the response field "id" should be "1"
+
+    Examples:
+      | method |
+      | PUT    |
+      | PATCH  |
+
+  @regression
+  Scenario: Delete a post
+    When I send a DELETE request to "/posts/1"
+    Then the response status should be 200
