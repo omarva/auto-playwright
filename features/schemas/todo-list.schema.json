@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TodoList",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "title", "completed", "createdAt", "updatedAt"],
+    "properties": {
+      "id": { "type": "integer", "minimum": 1 },
+      "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+      "completed": { "type": "boolean" },
+      "createdAt": { "type": "string" },
+      "updatedAt": { "type": "string" }
+    },
+    "additionalProperties": false
+  }
+}
