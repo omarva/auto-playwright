@@ -26,6 +26,7 @@ report layout, and is wired into a CI/CD pipeline that publishes a live dashboar
 [Demo](#-see-it-in-action) ·
 [Architecture](#-architecture) ·
 [Reports](#-reporting) ·
+[API & back-end](#%EF%B8%8F-api--back-end-testing) ·
 [CI/CD](#-cicd-pipeline) ·
 [Writing tests](#-writing-a-new-scenario)
 
@@ -44,8 +45,8 @@ report layout, and is wired into a CI/CD pipeline that publishes a live dashboar
 **🧩 One spec, four languages**<br>
 All Gherkin lives in [`features/`](features). TypeScript, Python, Java and C# each run it directly, with no copies, so the languages can't drift apart.
 
-**🌐 UI + API + accessibility**<br>
-Browser journeys (login → cart → checkout), REST API checks through Playwright's `APIRequestContext`, and axe-core WCAG 2.1 AA scans.
+**🌐 UI + API + back-end + accessibility**<br>
+Browser journeys (login → cart → checkout), REST and JSON-schema contract tests, a bundled JWT-secured [Todo API](backend) with full CRUD coverage, and axe-core WCAG 2.1 AA scans.
 
 **🧪 Built for flake resistance**<br>
 Web-first assertions, role and test-id locators, an isolated browser context per scenario, retries in CI, and traces on failure.
@@ -148,6 +149,7 @@ HEADLESS=false SLOW_MO=300        ./run-tests.sh
 | `PARALLEL` / `RETRIES` | `2` / `0` | workers and retries for failed scenarios |
 | `TRACE` / `VIDEO` / `SCREENSHOT` | `retain-on-failure` / `off` / `only-on-failure` | evidence capture |
 | `BASE_URL` / `API_BASE_URL` | saucedemo.com / jsonplaceholder | systems under test |
+| `BACKEND_URL` / `BACKEND_REQUIRED` | `http://localhost:3000` / `false` | bundled Todo API; skipped if it's down unless required |
 
 The full contract is in [docs/CONVENTIONS.md](docs/CONVENTIONS.md). Each project also reads an optional `.env` file (see `.env.example`).
 
@@ -206,7 +208,8 @@ flowchart LR
     F --> TS & PY & JV & CS
     Runners --> Layers
     P --> PW["🎭 Playwright<br/>Chromium · Firefox · WebKit"]
-    A --> API["🌐 REST API"]
+    A --> API["🌐 Public REST API"]
+    A --> BE["🗄️ Todo API<br/>backend/ · JWT · SQLite"]
     Layers --> R["📊 reports/<br/>allure-results · junit · cucumber · html · artifacts"]
 ```
 
@@ -223,12 +226,15 @@ flowchart LR
 auto-playwright/
 ├── features/                 # 📄 shared Gherkin, the only place scenarios live
 │   ├── ui/                   #    login · inventory · cart · checkout · accessibility
-│   ├── api/                  #    REST API
-│   └── demo/                 #    playwright.dev showcase
+│   ├── api/                  #    public REST API + JSON-schema contract
+│   ├── backend/              #    Todo API: auth + CRUD
+│   ├── demo/                 #    playwright.dev showcase
+│   └── schemas/              #    JSON schemas shared by every language
 ├── typescript/               # 🟦 cucumber-js implementation
 ├── python/                   # 🐍 pytest-bdd implementation
 ├── java/                     # ☕ Cucumber-JVM implementation
 ├── dotnet/                   # 🟪 Reqnroll implementation
+├── backend/                  # 🗄️ zero-dependency Todo API (JWT + SQLite) used as a system under test
 ├── scripts/
 │   └── build-report-site.mjs # 📊 merges all results into Allure + the dashboard
 ├── docs/CONVENTIONS.md       # 📐 the cross-language contract
@@ -247,12 +253,15 @@ auto-playwright/
 | 🛒 [Shopping cart](features/ui/cart.feature) | 3 | Add one or many (data tables), remove, badge state |
 | 💳 [Checkout](features/ui/checkout.feature) | 4 | End-to-end purchase, totals, form validation outline |
 | ♿ [Accessibility](features/ui/accessibility.feature) | 2 | axe-core WCAG 2.0/2.1 A and AA, fails on serious or critical issues |
-| 🔌 [Posts REST API](features/api/posts.feature) | 4 | GET / filter / POST (doc-string body) / 404, headers and fields |
+| 🔌 [Posts REST API](features/api/posts.feature) | 7 | GET / filter / POST / PUT / PATCH / DELETE / 404, headers and fields |
+| 📜 [API contract](features/api/contract.feature) | 4 | JSON-schema validation, nested paths, relationships, response-time budget |
+| 🔑 [Todo API · auth](features/backend/auth.feature) | 7 | JWT login, invalid-credential outline, profile, missing and forged tokens |
+| 🗄️ [Todo API · resources](features/backend/todos.feature) | 6 | Full CRUD lifecycle, filtering, cross-user isolation, validation, 404s, performance |
 | 🎬 [Demo](features/demo/playwright_site.feature) | 6 | Navigation, outlines, screenshots attached to the report |
 
-**30 scenarios × 4 languages × 3 browsers = 360 executions per CI run.**
+**50 scenarios × 4 languages × 3 browsers = 600 executions per CI run.**
 
-Tags let pipelines pick a slice of the suite: `@ui` `@api` `@smoke` `@regression` `@negative` `@e2e` `@a11y` `@demo` `@wip`.
+Tags let pipelines pick a slice of the suite: `@ui` `@api` `@backend` `@contract` `@smoke` `@regression` `@negative` `@e2e` `@a11y` `@demo` `@wip`.
 
 ---
 
@@ -305,6 +314,51 @@ flowchart LR
 **Run it on demand:** *Actions → CI → Run workflow* lets you choose the language, browser and tag expression.
 
 **Branch protection:** require the single **`CI status`** check, which fails if any lint or test job fails.
+
+---
+
+## 🗄️ API & back-end testing
+
+The [`backend/`](backend) folder contains a **real back-end**: a zero-dependency Todo API (Node's `http`,
+`sqlite` and `crypto` only) with JWT auth, per-user data isolation, strict validation and an
+[OpenAPI 3.1 contract](backend/openapi.yaml). Start it with one command:
+
+```bash
+node backend/server.mjs        # http://localhost:3000 · users alice/wonderland, bob/canwefixit
+```
+
+Every language shares one **generic API step library** ([spec](docs/CONVENTIONS.md#7-api-step-library)),
+so new API scenarios usually need **no new code**:
+
+```gherkin
+Background:
+  Given I use the "todo" API
+  And I am authenticated as "alice" with password "wonderland"
+
+Scenario: Full CRUD lifecycle of a todo
+  When I send a POST request to "/api/todos" with body:
+    """json
+    { "title": "Write Playwright tests" }
+    """
+  Then the response status should be 201
+  And the response should match the "todo" schema
+  When I store the response field "id" as "todoId"
+  And I send a DELETE request to "/api/todos/${todoId}"
+  Then the response status should be 204
+```
+
+| Capability | Example step |
+|---|---|
+| Any HTTP verb, with or without a JSON body | `I send a PATCH request to "…" with body:` |
+| Auth | `I am authenticated as …` · `I am not authenticated` · `I use the bearer token …` |
+| Variables | `I store the response field "id" as "todoId"`, then `${todoId}` in paths, bodies and expectations |
+| Field checks (dot paths, array indexes) | `the response field "address.geo.lat" should be "-37.3159"` |
+| Collections | `every item … should have field …` · `should (not) contain an item with field …` |
+| Contracts | `the response should match the "todo" schema` (shared [JSON schemas](features/schemas)) |
+| Performance budgets | `the response time should be below 1000 ms` |
+
+Each request and response (headers, pretty JSON, duration) is attached to every report. CI starts the Todo API
+next to every test job, and Docker runs each language image against a Todo API container.
 
 ---
 

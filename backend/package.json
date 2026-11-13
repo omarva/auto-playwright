@@ -1,0 +1,14 @@
+{
+  "name": "auto-playwright-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dependency-free Todo API used as a back-end system under test",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.mjs"
+  }
+}

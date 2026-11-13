@@ -9,6 +9,7 @@ on:
       - "**/Dockerfile"
       - ".dockerignore"
       - "docker-compose.yml"
+      - "backend/**"
       - "typescript/package*.json"
       - "python/requirements*.txt"
       - "java/pom.xml"
@@ -19,6 +20,10 @@ on:
       - "**/Dockerfile"
       - ".dockerignore"
       - "docker-compose.yml"
+      - "backend/**"
+      - "typescript/package*.json"
+      - "python/requirements*.txt"
+      - "java/pom.xml"
       - ".github/workflows/docker.yml"
   schedule:
     - cron: "0 5 * * 1" # weekly, Monday 05:00 UTC
@@ -65,12 +70,27 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.language }}
           cache-to: type=gha,mode=max,scope=${{ matrix.language }}
+      - name: Start the Todo API container
+        run: |
+          docker build -t auto-playwright-backend backend
+          docker network create sut
+          docker run -d --name backend --network sut auto-playwright-backend
+          for i in $(seq 1 30); do
+            [ "$(docker inspect -f '{{.State.Health.Status}}' backend)" = "healthy" ] && exit 0
+            sleep 1
+          done
+          docker logs backend
+          exit 1
       - name: Run @smoke inside the container
         run: |
           mkdir -p "reports"
-          docker run --rm --ipc=host -e CI=true -e TAGS=@smoke -e PARALLEL=2 \
+          docker run --rm --ipc=host --network sut -e CI=true -e TAGS=@smoke -e PARALLEL=2 \
+            -e BACKEND_URL=http://backend:3000 -e BACKEND_REQUIRED=true \
             -v "$PWD/reports:/app/${{ matrix.language }}/reports" \
             "$(echo '${{ steps.meta.outputs.tags }}' | head -n1)"
+      - name: Make container-written reports readable
+        if: ${{ !cancelled() }}
+        run: sudo chmod -R a+rwX reports
       - name: Upload container reports
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
@@ -78,6 +98,36 @@ jobs:
           name: docker-reports-${{ matrix.language }}
           path: reports/
           retention-days: 7
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push image
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: docker push --all-tags "$IMAGE"
+
+  backend-image:
+    name: Image · backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/auto-playwright-backend
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build image
+        run: docker build -t "$IMAGE:latest" -t "$IMAGE:sha-${GITHUB_SHA::7}" backend
+      - name: Smoke-test the API
+        run: |
+          docker run -d --name backend -p 3000:3000 "$IMAGE:latest"
+          for i in $(seq 1 30); do curl -fsS localhost:3000/health && break; sleep 1; done
+          code=$(curl -s -o /dev/null -w '%{http_code}' localhost:3000/api/todos)
+          if [ "$code" != "401" ]; then echo "expected 401, got $code"; docker logs backend; exit 1; fi
       - name: Log in to GHCR
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: docker/login-action@v4

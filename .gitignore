@@ -42,3 +42,6 @@ Thumbs.db
 
 # Reqnroll code-behind must never live next to the shared features
 *.feature.cs
+
+# Report-site builder scratch space
+.allure-work/

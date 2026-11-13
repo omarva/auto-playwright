@@ -30,6 +30,23 @@ The `PARALLEL`, `RETRIES` and `TAGS` variables map onto `-n`, `--reruns` and `-m
 unless you pass those flags yourself. All other variables are described in
 [CONVENTIONS.md](../docs/CONVENTIONS.md#3-configuration-environment-variables).
 
+## API and back-end testing
+
+`tests/step_defs/api_steps.py` implements the shared, keyword-agnostic API step library
+([CONVENTIONS.md §7](../docs/CONVENTIONS.md#7-api-step-library)): any HTTP method, JWT auth,
+`${variable}` interpolation, dot-path fields (`address.geo.lat`, `0.email`), JSON-schema
+contracts (`jsonschema`, draft-07, from `../features/schemas`) and response-time budgets.
+
+The `@backend` scenarios target the bundled Todo API. Start it first:
+
+```bash
+node ../backend/server.mjs          # http://localhost:3000 (override with BACKEND_URL)
+pytest -m backend
+```
+
+If the API is not running, `@backend` scenarios are **skipped** with a hint. Set
+`BACKEND_REQUIRED=true` (as CI does) to make them fail instead.
+
 ## Layout
 
 ```

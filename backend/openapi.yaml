@@ -1,0 +1,212 @@
+openapi: 3.1.0
+info:
+  title: Todo API
+  version: 1.0.0
+  description: >
+    Dependency-free back-end bundled with auto-playwright as a system under test.
+    Seeded users: alice / wonderland, bob / canwefixit.
+servers:
+  - url: http://localhost:3000
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      summary: Liveness probe
+      security: []
+      responses:
+        "200":
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, const: ok }
+                  uptime: { type: integer }
+  /api/auth/login:
+    post:
+      summary: Exchange credentials for a JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LoginResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/me:
+    get:
+      summary: Current user
+      responses:
+        "200":
+          description: The authenticated user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/todos:
+    get:
+      summary: List the caller's todos
+      parameters:
+        - name: completed
+          in: query
+          schema: { type: string, enum: ["true", "false"] }
+      responses:
+        "200":
+          description: Todos ordered by id
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Todo" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      summary: Create a todo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TodoInput" }
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Todo" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/todos/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    get:
+      summary: Get one todo
+      responses:
+        "200":
+          description: The todo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Todo" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      summary: Replace a todo (completed defaults to false)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TodoInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Todo" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      summary: Partially update a todo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              additionalProperties: false
+              properties:
+                title: { type: string, minLength: 1, maxLength: 200 }
+                completed: { type: boolean }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Todo" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      summary: Delete a todo
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      required: [id, username, name]
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        name: { type: string }
+    LoginResponse:
+      type: object
+      required: [token, tokenType, expiresIn, user]
+      properties:
+        token: { type: string }
+        tokenType: { type: string, const: Bearer }
+        expiresIn: { type: integer }
+        user: { $ref: "#/components/schemas/User" }
+    TodoInput:
+      type: object
+      required: [title]
+      additionalProperties: false
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        completed: { type: boolean, default: false }
+    Todo:
+      type: object
+      required: [id, title, completed, createdAt, updatedAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        completed: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+        details:
+          type: array
+          items: { type: string }
+  responses:
+    Unauthorized:
+      description: Missing, invalid or expired token
+      headers:
+        WWW-Authenticate: { schema: { type: string } }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Not found (also returned for other users' todos)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ValidationError:
+      description: Every validation problem is listed in details
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }

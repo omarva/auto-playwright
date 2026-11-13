@@ -67,6 +67,8 @@ class Config:
     navigation_timeout: int = field(default_factory=lambda: _int("NAV_TIMEOUT", 30_000))
     base_url: str = field(default_factory=lambda: _str("BASE_URL", "https://www.saucedemo.com"))
     api_base_url: str = field(default_factory=lambda: _str("API_BASE_URL", "https://jsonplaceholder.typicode.com"))
+    backend_url: str = field(default_factory=lambda: _str("BACKEND_URL", "http://localhost:3000"))
+    backend_required: bool = field(default_factory=lambda: _bool("BACKEND_REQUIRED", False))
     demo_url: str = field(default_factory=lambda: _str("DEMO_URL", "https://playwright.dev"))
     user_password: str = field(default_factory=lambda: _str("USER_PASSWORD", "secret_sauce"))
     tags: str = field(default_factory=lambda: _str("TAGS", "not @wip"))

@@ -8,7 +8,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "clean": "rimraf reports",
+    "clean": "rimraf --glob \"reports/*\"",
     "pretest": "npm run clean",
     "test": "cucumber-js",
     "test:smoke": "cross-env TAGS=@smoke npm test",
@@ -30,6 +30,7 @@
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.65.0",
     "@types/node": "24.19.2",
+    "ajv": "8.20.0",
     "allure": "3.33.0",
     "allure-cucumberjs": "3.14.0",
     "allure-js-commons": "3.14.0",

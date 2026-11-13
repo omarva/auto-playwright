@@ -52,6 +52,8 @@ export const config = Object.freeze({
   baseUrl: str('BASE_URL', 'https://www.saucedemo.com'),
   apiBaseUrl: str('API_BASE_URL', 'https://jsonplaceholder.typicode.com'),
   demoUrl: str('DEMO_URL', 'https://playwright.dev'),
+  backendUrl: str('BACKEND_URL', 'http://localhost:3000'),
+  backendRequired: bool('BACKEND_REQUIRED', false),
   userPassword: str('USER_PASSWORD', 'secret_sauce'),
   tags: str('TAGS', 'not @wip'),
   parallel: int('PARALLEL', 2),

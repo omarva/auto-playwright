@@ -6,14 +6,24 @@
 # Reports land in ./<language>/reports on the host.
 x-common: &common
   ipc: host # recommended by Playwright for Chromium stability
+  depends_on:
+    backend:
+      condition: service_healthy
   environment:
     CI: "true"
+    BACKEND_URL: http://backend:3000
+    BACKEND_REQUIRED: "true"
     TAGS: ${TAGS:-not @wip}
     BROWSER: ${BROWSER:-chromium}
     PARALLEL: ${PARALLEL:-2}
     RETRIES: ${RETRIES:-0}
 
 services:
+  backend:
+    build: { context: backend }
+    image: auto-playwright-backend
+    ports: ["3000:3000"]
+
   typescript:
     <<: *common
     build: { context: ., dockerfile: typescript/Dockerfile }

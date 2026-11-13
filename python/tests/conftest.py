@@ -65,7 +65,21 @@ def _patch_allure_title_path() -> None:
 
 _patch_allure_title_path()
 
-MARKERS = ("ui", "api", "smoke", "regression", "negative", "demo", "e2e", "wip", "a11y")
+MARKERS = (
+    "ui",
+    "api",
+    "smoke",
+    "regression",
+    "negative",
+    "demo",
+    "e2e",
+    "wip",
+    "a11y",
+    "backend",
+    "contract",
+    "auth",
+    "todos",
+)
 FEATURE_MARKERS = ("login", "inventory", "cart", "checkout")
 HTML_EXTRAS = pytest.StashKey[list[Any]]()
 
@@ -285,9 +299,15 @@ def api(playwright_instance: Playwright) -> Iterator[APIRequestContext]:
 
 @dataclass
 class ApiState:
+    """Per-scenario API session: target service, auth, variables and the last response."""
+
+    base_url: str = field(default_factory=lambda: settings().api_base_url)
+    token: str | None = None
+    variables: dict[str, str] = field(default_factory=dict)
     response: APIResponse | None = None
     body: Any = None
-    extra: dict[str, Any] = field(default_factory=dict)
+    text: str = ""
+    duration_ms: float = 0.0
 
 
 @pytest.fixture

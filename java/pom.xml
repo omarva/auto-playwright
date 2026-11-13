@@ -25,6 +25,7 @@
     <jackson.version>2.23.0</jackson.version>
     <axe.version>4.14.0</axe.version>
     <dotenv.version>3.2.0</dotenv.version>
+    <json-schema-validator.version>2.0.8</json-schema-validator.version>
     <slf4j.version>2.0.20</slf4j.version>
 
     <!-- Plugin versions -->
@@ -129,6 +130,12 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+      <version>${json-schema-validator.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>io.github.cdimascio</groupId>
       <artifactId>dotenv-java</artifactId>
       <version>${dotenv.version}</version>
@@ -155,6 +162,14 @@
           <include>**/*.feature</include>
         </includes>
       </testResource>
+      <!-- Shared JSON schemas for the API contract steps. -->
+      <testResource>
+        <directory>${project.basedir}/../features/schemas</directory>
+        <targetPath>schemas</targetPath>
+        <includes>
+          <include>*.schema.json</include>
+        </includes>
+      </testResource>
     </testResources>
 
     <plugins>
@@ -171,9 +186,13 @@
             </goals>
             <configuration>
               <excludeDefaultDirectories>true</excludeDefaultDirectories>
+              <!-- Delete the CONTENTS only: reports/ may be a mounted Docker volume. -->
               <filesets>
                 <fileset>
                   <directory>${reports.dir}</directory>
+                  <includes>
+                    <include>**/*</include>
+                  </includes>
                 </fileset>
               </filesets>
             </configuration>
