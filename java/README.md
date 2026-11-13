@@ -29,6 +29,7 @@ On Windows use `mvnw.cmd` instead of `./mvnw`.
 ```bash
 TAGS="@smoke" ./mvnw -B verify                   # only smoke scenarios
 TAGS="@api" ./mvnw -B verify                     # API only – no browser is launched
+TAGS="@backend" ./mvnw -B verify                 # Todo API tests (start: node ../backend/server.mjs)
 BROWSER=firefox ./mvnw -B verify                 # chromium | firefox | webkit
 PARALLEL=4 RETRIES=1 ./mvnw -B verify            # 4 threads, retry failures once
 HEADLESS=false SLOW_MO=300 ./mvnw -B verify      # watch it run
@@ -39,6 +40,20 @@ HEADLESS=false SLOW_MO=300 ./mvnw -B verify      # watch it run
 
 All runtime options are listed in [CONVENTIONS.md](../docs/CONVENTIONS.md#3-configuration-environment-variables).
 Copy [`.env.example`](.env.example) to `.env` to set them locally.
+
+## API & back-end testing
+
+`ApiSteps` implements the shared, keyword-agnostic API step library
+([CONVENTIONS.md §7](../docs/CONVENTIONS.md#7-api-step-library)) on Playwright's
+`APIRequestContext`. Per-scenario state (service, bearer token, `${variables}`, last
+response and its timing) lives in `support/ApiSession.java`.
+
+* **Services:** `jsonplaceholder` (`API_BASE_URL`) and `todo`, the bundled back-end
+  (`BACKEND_URL`, default `http://localhost:3000`). If the Todo API is down, `@backend`
+  scenarios are **skipped**. With `BACKEND_REQUIRED=true` (as in CI) they **fail** instead.
+* **Contracts:** `../features/schemas/*.schema.json` are copied to the test classpath and
+  validated with networknt json-schema-validator (draft-07). Every violation is listed.
+* Every request/response pair (headers, pretty JSON, duration) is attached to the reports.
 
 ## Reports
 

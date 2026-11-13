@@ -72,6 +72,16 @@ public final class Config {
     return stripTrailingSlash(get("API_BASE_URL", "https://jsonplaceholder.typicode.com"));
   }
 
+  /** Base URL of the bundled Todo API in {@code backend/}. */
+  public static String backendUrl() {
+    return stripTrailingSlash(get("BACKEND_URL", "http://localhost:3000"));
+  }
+
+  /** {@code true}: fail (instead of skip) {@code @backend} scenarios when the Todo API is down. */
+  public static boolean backendRequired() {
+    return Boolean.parseBoolean(get("BACKEND_REQUIRED", "false"));
+  }
+
   public static String demoUrl() {
     return stripTrailingSlash(get("DEMO_URL", "https://playwright.dev"));
   }

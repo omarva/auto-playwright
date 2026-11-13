@@ -25,10 +25,6 @@ public class ScenarioContext {
   private BrowserContext browserContext;
   private Page page;
   private APIRequestContext api;
-  private ApiResult lastResponse;
-
-  /** The outcome of the last HTTP call made by an API step. */
-  public record ApiResult(int status, Map<String, String> headers, String body) {}
 
   void start(Scenario scenario) {
     this.scenario = scenario;
@@ -76,6 +72,7 @@ public class ScenarioContext {
     return browserContext;
   }
 
+  /** Request context for API steps; callers pass absolute URLs (see {@code ApiSession}). */
   public APIRequestContext api() {
     if (api == null) {
       api =
@@ -83,7 +80,6 @@ public class ScenarioContext {
               .request()
               .newContext(
                   new APIRequest.NewContextOptions()
-                      .setBaseURL(Config.apiBaseUrl())
                       .setTimeout(Config.navigationTimeout())
                       .setExtraHTTPHeaders(Map.of("Accept", "application/json")));
     }
@@ -92,17 +88,6 @@ public class ScenarioContext {
 
   boolean hasApi() {
     return api != null;
-  }
-
-  public ApiResult lastResponse() {
-    if (lastResponse == null) {
-      throw new IllegalStateException("No API request has been sent in this scenario yet");
-    }
-    return lastResponse;
-  }
-
-  public void lastResponse(ApiResult result) {
-    this.lastResponse = result;
   }
 
   /** Attaches a PNG screenshot of the current page to every report. */
