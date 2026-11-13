@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <NUnit>
+    <!-- Overridden by run-tests.(ps1|sh) from the PARALLEL environment variable. -->
+    <NumberOfTestWorkers>2</NumberOfTestWorkers>
+  </NUnit>
+  <LoggerRunSettings>
+    <Loggers>
+      <Logger friendlyName="junit">
+        <Configuration>
+          <LogFileName>junit-results.xml</LogFileName>
+          <MethodFormat>Class</MethodFormat>
+          <FailureBodyFormat>Verbose</FailureBodyFormat>
+        </Configuration>
+      </Logger>
+      <Logger friendlyName="trx">
+        <Configuration>
+          <LogFileName>results.trx</LogFileName>
+        </Configuration>
+      </Logger>
+      <Logger friendlyName="console">
+        <Configuration>
+          <Verbosity>normal</Verbosity>
+        </Configuration>
+      </Logger>
+    </Loggers>
+  </LoggerRunSettings>
+</RunSettings>

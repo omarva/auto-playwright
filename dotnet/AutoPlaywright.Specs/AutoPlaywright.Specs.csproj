@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>AutoPlaywright.Specs</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Generate code-behind into obj/ so the shared features/ folder only ever holds .feature files. -->
+    <ReqnrollUseIntermediateOutputPathForCodeBehind>true</ReqnrollUseIntermediateOutputPathForCodeBehind>
+    <!-- Repository layout: dotnet/AutoPlaywright.Specs -> dotnet -> repo root -->
+    <DotnetRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</DotnetRoot>
+    <ReportsDir>$(DotnetRoot)\reports</ReportsDir>
+    <!-- Must stay relative: Reqnroll appends the item path to obj/ when generating code-behind. -->
+    <SharedFeaturesDir>..\..\features</SharedFeaturesDir>
+    <RunSettingsFilePath>$(DotnetRoot)\test.runsettings</RunSettingsFilePath>
+    <VSTestResultsDirectory>$(ReportsDir)\junit</VSTestResultsDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.64.1" />
+    <PackageReference Include="Reqnroll.NUnit" Version="3.3.4" />
+    <PackageReference Include="NUnit" Version="4.6.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.3.1" />
+    <PackageReference Include="Allure.Reqnroll" Version="2.15.0" />
+    <PackageReference Include="AwesomeAssertions" Version="9.6.0" />
+    <PackageReference Include="Deque.AxeCore.Playwright" Version="4.14.0" />
+    <PackageReference Include="JunitXml.TestLogger" Version="8.1.0" />
+  </ItemGroup>
+
+  <!--
+    Single source of truth: the Gherkin lives in the repository-root features/ folder.
+    The files are *linked* (not copied) so Reqnroll generates code-behind for them.
+  -->
+  <ItemGroup>
+    <ReqnrollFeatureFiles Include="$(SharedFeaturesDir)\**\*.feature" Link="Features\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="$(SharedFeaturesDir)\**\*.feature" Link="Features\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="reqnroll.json;allureConfig.json;appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Wipe the previous run's reports before every `dotnet test`. -->
+  <Target Name="CleanReports" BeforeTargets="VSTest">
+    <RemoveDir Directories="$(ReportsDir)" ContinueOnError="true" />
+    <MakeDir Directories="$(ReportsDir)\junit;$(ReportsDir)\cucumber;$(ReportsDir)\html;$(ReportsDir)\allure-results;$(ReportsDir)\artifacts" />
+  </Target>
+
+</Project>

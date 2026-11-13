@@ -1,0 +1,16 @@
+{
+  "$schema": "https://schemas.reqnroll.net/reqnroll-config-latest.json",
+  "language": {
+    "feature": "en-US"
+  },
+  "bindingAssemblies": [
+    { "assembly": "Allure.ReqnrollPlugin" }
+  ],
+  "trace": {
+    "stepDefinitionSkeletonStyle": "CucumberExpressionAttribute"
+  },
+  "formatters": {
+    "html": { "outputFilePath": "../../../../reports/html/index.html" },
+    "message": { "outputFilePath": "../../../../reports/cucumber/messages.ndjson" }
+  }
+}

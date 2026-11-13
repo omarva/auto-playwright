@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/allure-framework/allure-csharp/2.15.0/src/Allure.Reqnroll/Schemas/allureConfig.schema.json",
+  "allure": {
+    "directory": "../../../../reports/allure-results",
+    "gherkinPatterns": {
+      "stepArguments": {
+        "createFromDataTables": false
+      },
+      "metadata": {
+        "severity": "(normal|blocker|critical|minor|trivial)"
+      }
+    },
+    "failExceptions": [
+      "NUnit.Framework.AssertionException",
+      "Microsoft.Playwright.PlaywrightException",
+      "System.TimeoutException"
+    ]
+  }
+}
