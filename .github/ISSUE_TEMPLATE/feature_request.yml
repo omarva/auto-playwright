@@ -1,0 +1,14 @@
+name: New scenario / feature
+description: Propose new coverage or a framework improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: gherkin
+    attributes:
+      label: Proposed Gherkin (if it is a scenario)
+      render: gherkin
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is this valuable?
+    validations: { required: true }

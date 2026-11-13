@@ -1,0 +1,34 @@
+name: Bug report
+description: A scenario fails unexpectedly or the framework misbehaves
+labels: [bug]
+body:
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language implementation
+      multiple: true
+      options: [TypeScript, Python, Java, C#, All / shared]
+    validations: { required: true }
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      multiple: true
+      options: [chromium, firefox, webkit, n/a (API)]
+  - type: input
+    id: scenario
+    attributes:
+      label: Scenario
+      placeholder: "features/ui/checkout.feature - Complete a purchase end to end"
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the error, a link to the CI run or Allure report, and the trace if you have one.
+    validations: { required: true }
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      render: shell
+      placeholder: BROWSER=webkit TAGS=@checkout npm test
