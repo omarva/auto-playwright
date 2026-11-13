@@ -7,7 +7,7 @@
     "id": { "type": "integer", "minimum": 1 },
     "name": { "type": "string", "minLength": 1 },
     "username": { "type": "string", "minLength": 1 },
-    "email": { "type": "string", "pattern": "^[^@\s]+@[^@\s]+$" },
+    "email": { "type": "string", "pattern": "^[^@\\s]+@[^@\\s]+$" },
     "phone": { "type": "string" },
     "website": { "type": "string" },
     "address": {
@@ -22,8 +22,8 @@
           "type": "object",
           "required": ["lat", "lng"],
           "properties": {
-            "lat": { "type": "string", "pattern": "^-?\d+(\.\d+)?$" },
-            "lng": { "type": "string", "pattern": "^-?\d+(\.\d+)?$" }
+            "lat": { "type": "string", "pattern": "^-?\\d+(\\.\\d+)?$" },
+            "lng": { "type": "string", "pattern": "^-?\\d+(\\.\\d+)?$" }
           }
         }
       }
