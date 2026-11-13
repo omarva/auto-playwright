@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Playwright + Cucumber BDD test framework (TypeScript)",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "engines": {
     "node": ">=22"
   },
