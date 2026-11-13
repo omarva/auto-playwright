@@ -1,0 +1,53 @@
+[project]
+name = "auto-playwright-python"
+version = "1.0.0"
+description = "Playwright + pytest-bdd (Gherkin) test framework"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+bdd_features_base_dir = "../features"
+required_plugins = ["pytest-bdd", "pytest-xdist", "pytest-html", "allure-pytest-bdd", "pytest-rerunfailures"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--junitxml=reports/junit/pytest-junit.xml",
+    "--cucumberjson=reports/cucumber/cucumber.json",
+    "--html=reports/html/index.html",
+    "--self-contained-html",
+    "--alluredir=reports/allure-results",
+    "--clean-alluredir",
+]
+junit_family = "xunit2"
+junit_suite_name = "Python"
+filterwarnings = ["error::pytest.PytestUnknownMarkWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["src", "."]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PT", "PL", "BLE", "TC"]
+ignore = ["PLR2004", "PLR0913", "PLR0917", "PLC0415"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["autopw", "tests"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"
+explicit_package_bases = true
+packages = ["autopw", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["axe_playwright_python.*", "pytest_html.*", "pytest_bdd.*", "allure_pytest_bdd.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# allure-python ships without complete type hints
+module = ["tests.conftest"]
+disallow_untyped_calls = false

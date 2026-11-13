@@ -1,0 +1,10 @@
+# Runtime dependencies for the Python implementation (pinned for reproducible CI).
+playwright==1.65.1
+pytest==9.2.0
+pytest-bdd==9.0.1
+pytest-xdist==3.8.0
+pytest-rerunfailures==16.7
+pytest-html==4.2.0
+allure-pytest-bdd==2.16.2
+axe-playwright-python==0.1.8
+python-dotenv==1.2.4
