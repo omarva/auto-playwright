@@ -88,6 +88,9 @@ jobs:
             -e BACKEND_URL=http://backend:3000 -e BACKEND_REQUIRED=true \
             -v "$PWD/reports:/app/${{ matrix.language }}/reports" \
             "$(echo '${{ steps.meta.outputs.tags }}' | head -n1)"
+      - name: Make container-written reports readable
+        if: ${{ !cancelled() }}
+        run: sudo chmod -R a+rwX reports
       - name: Upload container reports
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
