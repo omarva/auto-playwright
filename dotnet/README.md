@@ -113,7 +113,7 @@ context injection shares the per-scenario `ScenarioSession` between step classes
 # from the repository root
 docker build -f dotnet/Dockerfile -t autoplaywright-dotnet .
 docker run --rm -e TAGS="@smoke" -e BROWSER=firefox \
-  -v "$PWD/dotnet/reports:/repo/dotnet/reports" autoplaywright-dotnet
+  -v "$PWD/dotnet/reports:/app/dotnet/reports" autoplaywright-dotnet
 ```
 
 ## Lint

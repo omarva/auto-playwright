@@ -1,0 +1,39 @@
+# Run any (or every) language implementation in a container - no local toolchains needed.
+#
+#   docker compose run --rm typescript                  # one language
+#   TAGS=@smoke docker compose up --abort-on-container-failure   # all four in parallel
+#
+# Reports land in ./<language>/reports on the host.
+x-common: &common
+  ipc: host # recommended by Playwright for Chromium stability
+  environment:
+    CI: "true"
+    TAGS: ${TAGS:-not @wip}
+    BROWSER: ${BROWSER:-chromium}
+    PARALLEL: ${PARALLEL:-2}
+    RETRIES: ${RETRIES:-0}
+
+services:
+  typescript:
+    <<: *common
+    build: { context: ., dockerfile: typescript/Dockerfile }
+    image: auto-playwright-typescript
+    volumes: ["./typescript/reports:/app/typescript/reports"]
+
+  python:
+    <<: *common
+    build: { context: ., dockerfile: python/Dockerfile }
+    image: auto-playwright-python
+    volumes: ["./python/reports:/app/python/reports"]
+
+  java:
+    <<: *common
+    build: { context: ., dockerfile: java/Dockerfile }
+    image: auto-playwright-java
+    volumes: ["./java/reports:/app/java/reports"]
+
+  dotnet:
+    <<: *common
+    build: { context: ., dockerfile: dotnet/Dockerfile }
+    image: auto-playwright-dotnet
+    volumes: ["./dotnet/reports:/app/dotnet/reports"]
