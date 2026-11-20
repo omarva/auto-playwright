@@ -28,7 +28,7 @@
     "@axe-core/playwright": "4.14.0",
     "@cucumber/cucumber": "13.3.0",
     "@eslint/js": "10.0.1",
-    "@playwright/test": "1.65.0",
+    "@playwright/test": "1.65.1",
     "@types/node": "24.19.2",
     "ajv": "8.20.0",
     "allure": "3.33.0",
