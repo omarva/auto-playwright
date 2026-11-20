@@ -6,7 +6,7 @@
 #   docker build -f java/Dockerfile -t auto-playwright-java .
 #   docker run --rm -e TAGS=@smoke -v "$PWD/java/reports:/app/java/reports" auto-playwright-java
 #
-FROM mcr.microsoft.com/playwright/java:v1.65.0-noble
+FROM mcr.microsoft.com/playwright/java:v1.65.1-noble
 
 ENV MAVEN_OPTS="-Dmaven.repo.local=/root/.m2/repository" \
     HEADLESS=true \
