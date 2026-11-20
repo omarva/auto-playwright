@@ -1,5 +1,5 @@
 # Runtime dependencies for the Python implementation (pinned for reproducible CI).
-playwright==1.65.1
+playwright==1.65.2
 pytest==9.2.0
 pytest-bdd==9.0.1
 pytest-xdist==3.8.0
