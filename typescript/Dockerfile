@@ -1,7 +1,7 @@
 # Build from the REPOSITORY ROOT so the shared features/ folder is available:
 #   docker build -f typescript/Dockerfile -t auto-playwright-ts .
 #   docker run --rm -v "$PWD/typescript/reports:/app/typescript/reports" auto-playwright-ts
-FROM mcr.microsoft.com/playwright:v1.65.0-noble
+FROM mcr.microsoft.com/playwright:v1.65.1-noble
 
 ENV CI=true \
     HEADLESS=true
