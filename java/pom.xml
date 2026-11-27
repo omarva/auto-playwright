@@ -16,8 +16,8 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!-- Dependency versions -->
-    <playwright.version>1.65.0</playwright.version>
-    <cucumber.version>8.0.4</cucumber.version>
+    <playwright.version>1.65.1</playwright.version>
+    <cucumber.version>8.1.0</cucumber.version>
     <junit.version>6.1.3</junit.version>
     <allure.version>3.1.1</allure.version>
     <allure.cli.version>2.46.2</allure.cli.version>
@@ -34,8 +34,8 @@
     <clean.plugin.version>3.5.0</clean.plugin.version>
     <exec.plugin.version>3.7.0</exec.plugin.version>
     <cucumber.reporting.version>5.11.0</cucumber.reporting.version>
-    <allure.maven.version>3.1.0</allure.maven.version>
-    <spotless.version>3.11.0</spotless.version>
+    <allure.maven.version>3.2.0</allure.maven.version>
+    <spotless.version>3.12.0</spotless.version>
 
     <!-- Runtime knobs: overridable with -D, or via the environment variables of the same
          (upper-case) name thanks to the env-* profiles below. -->
@@ -210,7 +210,7 @@
       <!-- This module only contains tests; don't produce an empty jar. -->
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>3.5.0</version>
+        <version>3.5.1</version>
         <configuration>
           <skipIfEmpty>true</skipIfEmpty>
         </configuration>
@@ -309,7 +309,7 @@
       <!-- reports/html/index.html -> masterthought overview page -->
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>3.4.0</version>
+        <version>3.5.0</version>
         <executions>
           <execution>
             <id>html-report-index</id>
